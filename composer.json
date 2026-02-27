@@ -1,0 +1,18 @@
+{
+  "name": "restruct/xpdf-static",
+  "description": "Pre-compiled xpdf tools (pdftotext, pdfinfo, etc.) for Linux x64 and macOS",
+  "license": "GPL-2.0-only",
+  "authors"    : [
+    {
+      "name": "Restruct web & apps",
+      "email": "dev@restruct.nl",
+      "homepage": "https://restruct.nl",
+      "role": "Developer"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "XpdfStatic\\": "src/"
+    }
+  }
+}
