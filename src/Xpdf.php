@@ -1,15 +1,22 @@
 <?php
 
-namespace XpdfStatic;
+namespace Xpdf;
+
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
 
 /**
- * Wrapper class for the xpdf-static bootstrap.
+ * Main entry point for xpdf tools.
  *
- * Provides a clean API for resolving xpdf tool paths.
+ * Resolves binary paths (OS-aware) and provides a generic run() method
+ * for executing any xpdf tool via Symfony Process.
  */
-class XpdfStatic
+class Xpdf
 {
     private static bool $initialized = false;
+
+    /** Default process timeout in seconds */
+    private static int $defaultTimeout = 30;
 
     /** Available xpdf tools */
     private const TOOLS = [
@@ -93,5 +100,56 @@ class XpdfStatic
         }
 
         return $available;
+    }
+
+    /**
+     * Set the default timeout for all tool executions.
+     */
+    public static function setDefaultTimeout(int $seconds): void
+    {
+        self::$defaultTimeout = $seconds;
+    }
+
+    /**
+     * Get the default timeout.
+     */
+    public static function getDefaultTimeout(): int
+    {
+        return self::$defaultTimeout;
+    }
+
+    /**
+     * Run an xpdf tool with the given arguments.
+     *
+     * Uses Symfony Process for proper timeout/error handling.
+     *
+     * @param string $tool Tool name (e.g. 'pdftotext')
+     * @param array $args Command-line arguments
+     * @param int|null $timeout Timeout in seconds (null = default)
+     * @return XpdfResult
+     * @throws \RuntimeException if tool binary is not available
+     */
+    public static function run(string $tool, array $args = [], ?int $timeout = null): XpdfResult
+    {
+        $toolPath = self::getToolPath($tool);
+        if ($toolPath === '') {
+            throw new \RuntimeException("xpdf tool '$tool' is not available");
+        }
+
+        $command = array_merge([$toolPath], $args);
+        $process = new Process($command);
+        $process->setTimeout($timeout ?? self::$defaultTimeout);
+
+        try {
+            $process->run();
+        } catch (ProcessTimedOutException $e) {
+            return new XpdfResult('', "Process timed out after {$process->getTimeout()}s", -1);
+        }
+
+        return new XpdfResult(
+            $process->getOutput(),
+            $process->getErrorOutput(),
+            $process->getExitCode() ?? -1
+        );
     }
 }

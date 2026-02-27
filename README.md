@@ -1,21 +1,9 @@
-Xpdf tools — pre-compiled binaries for Linux x64 and macOS
+Xpdf tools — pre-compiled binaries + PHP wrappers
 ======
 
-Pre-compiled [Xpdf](https://www.xpdfreader.com/) command-line tools for PDF processing. Includes `pdftotext`, `pdfinfo`, `pdffonts`, `pdfimages`, `pdftohtml`, `pdftopng`, `pdftoppm`, `pdftops`, and `pdfdetach`.
+Pre-compiled [Xpdf](https://www.xpdfreader.com/) command-line tools with fluent PHP wrapper classes. Includes `pdftotext`, `pdfinfo`, `pdftopng`, `pdfimages`, and more.
 
 **Xpdf version:** 4.06
-
-## Features
-
-- **pdftotext** — extract text from PDF files
-- **pdfinfo** — PDF document information
-- **pdffonts** — list fonts used in a PDF
-- **pdfimages** — extract images from PDF files
-- **pdftohtml** — convert PDF to HTML
-- **pdftopng** / **pdftoppm** — convert PDF pages to images
-- **pdftops** — convert PDF to PostScript
-- **pdfdetach** — extract embedded files from PDF
-- **OS-aware bootstrap** (`bootstrap.php`) auto-detects platform and sets `XPDF_BIN_DIR`
 
 ## Installation
 
@@ -23,45 +11,169 @@ Pre-compiled [Xpdf](https://www.xpdfreader.com/) command-line tools for PDF proc
 composer require restruct/xpdf-static
 ```
 
-Make sure the binaries in `x64/linux/` or `x64/mac/` have executable permissions (`chmod +x`).
-
-## Usage
-
-### PHP usage
+## Quick examples
 
 ```php
-// Auto-detect platform binaries
-require 'vendor/restruct/xpdf-static/bootstrap.php';
-$pdftotext = XPDF_BIN_DIR . '/pdftotext';
+use Xpdf\PdfToText;
+use Xpdf\PdfInfo;
+use Xpdf\PdfToPng;
+use Xpdf\PdfImages;
 
-// Or via the class wrapper
-use XpdfStatic\XpdfStatic;
+// Extract text (UTF-8, layout preserved)
+$text = PdfToText::extract('/path/to/file.pdf');
 
-$pdftotext = XpdfStatic::getToolPath('pdftotext');
-if (XpdfStatic::isAvailable()) {
-    exec("$pdftotext -layout input.pdf output.txt");
+// Page count
+$pages = PdfInfo::pageCount('/path/to/file.pdf');
+
+// Full document info
+$info = PdfInfo::create('/path/to/file.pdf');
+echo $info->getTitle();
+echo $info->getPageCount();
+$dims = $info->getPageDimensions();
+echo $dims->standard; // 'A4'
+
+// Render pages to PNG
+$pngs = PdfToPng::render('/path/to/file.pdf', '/tmp/output', dpi: 240);
+
+// Extract images
+$images = PdfImages::extractAll('/path/to/file.pdf', '/tmp/img');
+
+// List images without extracting
+$listing = PdfImages::list('/path/to/file.pdf');
+```
+
+## Wrapper classes
+
+### `Xpdf\Xpdf` — binary resolution + generic runner
+
+```php
+use Xpdf\Xpdf;
+
+// Check availability
+Xpdf::isAvailable();
+Xpdf::availableTools(); // ['pdftotext', 'pdfinfo', ...]
+
+// Run any tool directly
+$result = Xpdf::run('pdftotext', ['-layout', '-enc', 'UTF-8', 'input.pdf', '-']);
+echo $result->output;
+echo $result->isSuccessful();
+```
+
+### `Xpdf\PdfToText` — text extraction
+
+```php
+use Xpdf\PdfToText;
+
+// Quick extraction
+$text = PdfToText::extract('input.pdf');
+
+// Fluent API with full control
+$text = PdfToText::create('input.pdf')
+    ->encoding('UTF-8')
+    ->layout()
+    ->pages(1, 5)
+    ->noPageBreak()
+    ->noDiag()        // skip watermarks
+    ->getText();
+
+// Table mode for tabular data
+$text = PdfToText::create('input.pdf')
+    ->table()
+    ->encoding('UTF-8')
+    ->getText();
+
+// Save to file
+PdfToText::create('input.pdf')
+    ->encoding('UTF-8')
+    ->toFile('output.txt');
+```
+
+### `Xpdf\PdfInfo` — document metadata
+
+Replaces `howtomakeaturn/pdfinfo` with improved page dimension detection.
+
+```php
+use Xpdf\PdfInfo;
+
+$info = PdfInfo::create('input.pdf');
+
+// Basic metadata
+$info->getTitle();
+$info->getAuthor();
+$info->getPageCount();
+$info->getPdfVersion();
+$info->getCreationDate();
+
+// Page dimensions with paper size detection
+$dims = $info->getPageDimensions();
+$dims->width;       // 595 (points)
+$dims->height;      // 842 (points)
+$dims->standard;    // 'A4'
+$dims->orientation; // 'portrait'
+$dims->rotation;    // 0
+$dims->nearestDIN;  // 'A4' or 'A3'
+
+// All fields as array
+$all = $info->getAll();
+```
+
+### `Xpdf\PdfToPng` — page rendering
+
+```php
+use Xpdf\PdfToPng;
+
+// Render all pages
+$files = PdfToPng::render('input.pdf', '/tmp/page', dpi: 240);
+// ['/tmp/page-000001.png', '/tmp/page-000002.png', ...]
+
+// Render single page
+$file = PdfToPng::renderPage('input.pdf', 1, '/tmp/thumb', dpi: 72);
+
+// Full control
+$files = PdfToPng::create('input.pdf')
+    ->resolution(300)
+    ->pages(1, 10)
+    ->gray()
+    ->convert('/tmp/output');
+```
+
+### `Xpdf\PdfImages` — image extraction
+
+```php
+use Xpdf\PdfImages;
+
+// Extract all images (JPEG where possible)
+$files = PdfImages::extractAll('input.pdf', '/tmp/img');
+
+// Extract unique images only
+$files = PdfImages::extractUnique('input.pdf', '/tmp/img');
+
+// List images without extracting
+$list = PdfImages::list('input.pdf');
+foreach ($list as $img) {
+    echo "{$img['page']}: {$img['width']}x{$img['height']} {$img['color']} {$img['enc']}\n";
 }
 
-// List available tools
-$tools = XpdfStatic::availableTools();
-// ['pdftotext', 'pdfinfo', 'pdffonts', ...]
+// Full control
+$files = PdfImages::create('input.pdf')
+    ->pages(1, 5)
+    ->jpeg()
+    ->unique()
+    ->extract('/tmp/img');
 ```
 
-### Common pdftotext options
+## Binary resolution
 
-```bash
-# Extract text preserving layout
-pdftotext -layout input.pdf output.txt
+The bootstrap auto-detects the platform and sets `XPDF_BIN_DIR`:
 
-# Extract to stdout
-pdftotext input.pdf -
+1. `XPDF_BIN_DIR` constant (if already defined)
+2. `XPDF_BIN_DIR` environment variable
+3. macOS: bundled `x64/mac/` binaries
+4. Linux: bundled `x64/linux/` binaries
 
-# Extract specific pages
-pdftotext -f 1 -l 5 input.pdf output.txt
+## Available binaries
 
-# Simple text extraction (no layout preservation)
-pdftotext -simple input.pdf output.txt
-```
+All 9 xpdf tools are bundled: `pdftotext`, `pdfinfo`, `pdffonts`, `pdfimages`, `pdftohtml`, `pdftopng`, `pdftoppm`, `pdftops`, `pdfdetach`.
 
 ## License
 

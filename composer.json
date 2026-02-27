@@ -1,6 +1,6 @@
 {
   "name": "restruct/xpdf-static",
-  "description": "Pre-compiled xpdf tools (pdftotext, pdfinfo, etc.) for Linux x64 and macOS",
+  "description": "Pre-compiled xpdf tools with PHP wrappers (pdftotext, pdfinfo, pdftopng, pdfimages) for Linux x64 and macOS",
   "license": "GPL-2.0-only",
   "authors"    : [
     {
@@ -10,9 +10,13 @@
       "role": "Developer"
     }
   ],
+  "require": {
+    "php": ">=8.1",
+    "symfony/process": "^6.0 || ^7.0"
+  },
   "autoload": {
     "psr-4": {
-      "XpdfStatic\\": "src/"
+      "Xpdf\\": "src/"
     }
   }
 }
