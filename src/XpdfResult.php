@@ -1,6 +1,6 @@
 <?php
 
-namespace Xpdf;
+namespace Restruct\Xpdf;
 
 /**
  * Result of an xpdf tool execution.

@@ -14,10 +14,10 @@ composer require restruct/xpdf-static
 ## Quick examples
 
 ```php
-use Xpdf\PdfToText;
-use Xpdf\PdfInfo;
-use Xpdf\PdfToPng;
-use Xpdf\PdfImages;
+use Restruct\Xpdf\PdfToText;
+use Restruct\Xpdf\PdfInfo;
+use Restruct\Xpdf\PdfToPng;
+use Restruct\Xpdf\PdfImages;
 
 // Extract text (UTF-8, layout preserved)
 $text = PdfToText::extract('/path/to/file.pdf');
@@ -44,10 +44,10 @@ $listing = PdfImages::list('/path/to/file.pdf');
 
 ## Wrapper classes
 
-### `Xpdf\Xpdf` — binary resolution + generic runner
+### `Restruct\Xpdf\Xpdf` — binary resolution + generic runner
 
 ```php
-use Xpdf\Xpdf;
+use Restruct\Xpdf\Xpdf;
 
 // Check availability
 Xpdf::isAvailable();
@@ -59,10 +59,10 @@ echo $result->output;
 echo $result->isSuccessful();
 ```
 
-### `Xpdf\PdfToText` — text extraction
+### `Restruct\Xpdf\PdfToText` — text extraction
 
 ```php
-use Xpdf\PdfToText;
+use Restruct\Xpdf\PdfToText;
 
 // Quick extraction
 $text = PdfToText::extract('input.pdf');
@@ -88,12 +88,12 @@ PdfToText::create('input.pdf')
     ->toFile('output.txt');
 ```
 
-### `Xpdf\PdfInfo` — document metadata
+### `Restruct\Xpdf\PdfInfo` — document metadata
 
 Replaces `howtomakeaturn/pdfinfo` with improved page dimension detection.
 
 ```php
-use Xpdf\PdfInfo;
+use Restruct\Xpdf\PdfInfo;
 
 $info = PdfInfo::create('input.pdf');
 
@@ -117,10 +117,10 @@ $dims->nearestDIN;  // 'A4' or 'A3'
 $all = $info->getAll();
 ```
 
-### `Xpdf\PdfToPng` — page rendering
+### `Restruct\Xpdf\PdfToPng` — page rendering
 
 ```php
-use Xpdf\PdfToPng;
+use Restruct\Xpdf\PdfToPng;
 
 // Render all pages
 $files = PdfToPng::render('input.pdf', '/tmp/page', dpi: 240);
@@ -137,10 +137,10 @@ $files = PdfToPng::create('input.pdf')
     ->convert('/tmp/output');
 ```
 
-### `Xpdf\PdfImages` — image extraction
+### `Restruct\Xpdf\PdfImages` — image extraction
 
 ```php
-use Xpdf\PdfImages;
+use Restruct\Xpdf\PdfImages;
 
 // Extract all images (JPEG where possible)
 $files = PdfImages::extractAll('input.pdf', '/tmp/img');

@@ -1,6 +1,6 @@
 <?php
 
-namespace Xpdf;
+namespace Restruct\Xpdf;
 
 /**
  * Wrapper for the pdftopng tool — convert PDF pages to PNG images.

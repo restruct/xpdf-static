@@ -1,6 +1,6 @@
 <?php
 
-namespace Xpdf;
+namespace Restruct\Xpdf;
 
 /**
  * Wrapper for the pdftotext tool — extract text content from PDF files.

@@ -1,6 +1,6 @@
 <?php
 
-namespace Xpdf;
+namespace Restruct\Xpdf;
 
 /**
  * Wrapper for the pdfimages tool — extract images from PDF files.

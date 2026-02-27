@@ -1,6 +1,6 @@
 <?php
 
-namespace Xpdf;
+namespace Restruct\Xpdf;
 
 /**
  * Wrapper for the pdfinfo tool — extract PDF document metadata.
