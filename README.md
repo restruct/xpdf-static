@@ -5,6 +5,15 @@ Pre-compiled [Xpdf](https://www.xpdfreader.com/) command-line tools with fluent 
 
 **Xpdf version:** 4.06
 
+*Maintained by [Restruct](https://github.com/restruct). If this package saves you time, you can
+[support ongoing maintenance](https://github.com/sponsors/restruct).*
+
+## Requirements
+
+- PHP 8.1 or higher and `symfony/process` ^6 or ^7 (`composer.json` is the source of truth).
+- Bundled binaries are x86_64 only: Linux x86_64, and macOS x86_64 or Apple Silicon via Rosetta 2.
+  On other platforms (e.g. Linux ARM64) install xpdf yourself and point `XPDF_BIN_DIR` at it.
+
 ## Installation
 
 ```bash
@@ -177,5 +186,10 @@ All 9 xpdf tools are bundled: `pdftotext`, `pdfinfo`, `pdffonts`, `pdfimages`, `
 
 ## License
 
-- Xpdf tools: GNU General Public License v2 (Copyright Glyph & Cog, LLC)
-- Wrapper code: MIT (Copyright Restruct web & apps)
+- Wrapper code (`bootstrap.php`, `src/`): MIT (Copyright Restruct web & apps).
+- Bundled xpdf binaries (`x64/`): unmodified xpdf-tools 4.06, Copyright Glyph & Cog, LLC, licensed
+  under the GNU General Public License version 2 or 3. They are not covered by the MIT licence.
+  The upstream README, man pages and GPL texts that must accompany them are in `xpdf-doc/`; source
+  is available from https://www.xpdfreader.com/download.html.
+
+See [LICENSE](LICENSE) for the full terms.
