@@ -18,5 +18,11 @@
     "psr-4": {
       "Restruct\\Xpdf\\": "src/"
     }
-  }
+  },
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/restruct"
+    }
+  ]
 }
