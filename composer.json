@@ -1,7 +1,7 @@
 {
   "name": "restruct/xpdf-static",
   "description": "Pre-compiled xpdf tools with PHP wrappers (pdftotext, pdfinfo, pdftopng, pdfimages) for Linux x64 and macOS",
-  "license": "GPL-2.0-only",
+  "license": "(MIT AND (GPL-2.0-only OR GPL-3.0-only))",
   "authors"    : [
     {
       "name": "Restruct web & apps",
