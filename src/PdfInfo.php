@@ -9,7 +9,7 @@ namespace Restruct\Xpdf;
  * The page dimension/paper size detection started as a copy of an in-house PdfInfo wrapper;
  * since 1.0.2 this class holds the reconciled version (see CHANGELOG).
  *
- * A failed pdfinfo run (unreadable, damaged or encrypted file, timeout) throws a
+ * A failed pdfinfo run (unreadable, damaged or user-password-protected file, timeout) throws a
  * RuntimeException from every parsed getter, rather than reporting 0 pages.
  *
  * @see https://www.xpdfreader.com/pdfinfo-man.html
@@ -25,7 +25,7 @@ class PdfInfo
     # Standard paper sizes in points (width x height, portrait unless the name is orientation-specific)
     # Source: ISO 216, ANSI, GhostView
     # Keys are the true size rounded to whole points (mm * 72 / 25.4). Several used to be off by
-    # one (A0-A3, A8) or plain wrong (C2, C3), so those sizes never matched; corrected in 1.0.2.
+    # one (A0-A3, A8, C4) or plain wrong (C2, C3), so those sizes never matched; corrected in 1.0.2.
     # Matching is within STANDARD_SIZE_TOLERANCE, so the rounding itself no longer decides a match.
     private const PAPER_SIZES = [
         // ISO A series
@@ -311,7 +311,8 @@ class PdfInfo
     /**
      * Quick info extraction — returns all parsed fields.
      *
-     * @return array<string, string|null>
+     * @return array<string, string>
+     * @throws \RuntimeException if pdfinfo fails
      */
     public static function info(string $pdfFile): array
     {

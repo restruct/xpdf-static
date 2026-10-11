@@ -126,9 +126,11 @@ $dims->nearestDIN;  // 'A4' or 'A3'
 $all = $info->getAll();
 ```
 
-If pdfinfo fails (damaged, unreadable or encrypted file, timeout), every parsed getter throws a
-`RuntimeException` with the exit code and pdfinfo's error output, instead of returning 0 pages
-(from 1.0.2). `run()` still returns the raw `XpdfResult` without throwing.
+If pdfinfo fails (damaged, unreadable or user-password-protected file, timeout), every parsed
+getter throws a `RuntimeException` with the exit code and pdfinfo's error output, instead of
+returning 0 pages (from 1.0.2). A failed run is not cached, so each getter call runs pdfinfo again.
+`run()` still returns the raw `XpdfResult` without throwing. (A PDF with only an owner password
+opens fine and does not throw.)
 
 Empty fields (e.g. a document without a title) return `null`. When pdfinfo prints a label twice,
 the first value wins.
