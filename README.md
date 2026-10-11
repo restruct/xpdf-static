@@ -126,6 +126,17 @@ $dims->nearestDIN;  // 'A4' or 'A3'
 $all = $info->getAll();
 ```
 
+If pdfinfo fails (damaged, unreadable or encrypted file, timeout), every parsed getter throws a
+`RuntimeException` with the exit code and pdfinfo's error output, instead of returning 0 pages
+(from 1.0.2). `run()` still returns the raw `XpdfResult` without throwing.
+
+Empty fields (e.g. a document without a title) return `null`. When pdfinfo prints a label twice,
+the first value wins.
+
+`standard` is pdfinfo's own label when it prints one (it labels A0 to A6 and letter), otherwise the
+nearest entry in the built-in table of ISO A/B/C, ANSI and a few other sizes, within 2 points in
+either orientation. `null` means no standard size matched.
+
 ### `Restruct\Xpdf\PdfToPng` — page rendering
 
 ```php
@@ -183,6 +194,15 @@ The bootstrap auto-detects the platform and sets `XPDF_BIN_DIR`:
 ## Available binaries
 
 All 9 xpdf tools are bundled: `pdftotext`, `pdfinfo`, `pdffonts`, `pdfimages`, `pdftohtml`, `pdftopng`, `pdftoppm`, `pdftops`, `pdfdetach`.
+
+## Running the tests
+
+```bash
+composer install
+vendor/bin/phpunit
+```
+
+Tests that run the real `pdfinfo` are skipped when it is not available.
 
 ## License
 
