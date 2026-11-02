@@ -1,26 +1,28 @@
-Xpdf tools — pre-compiled binaries + PHP wrappers
-======
+# Xpdf tools for PHP
 
-Pre-compiled [Xpdf](https://www.xpdfreader.com/) command-line tools with fluent PHP wrapper classes. Includes `pdftotext`, `pdfinfo`, `pdftopng`, `pdfimages`, and more.
+Read text, metadata, page sizes and images out of PDF files from PHP, without installing anything
+on the server: this package ships the [Xpdf](https://www.xpdfreader.com/) command-line tools
+(`pdftotext`, `pdfinfo`, `pdftopng`, `pdfimages` and five more) as pre-compiled binaries for Linux
+and macOS, with a fluent PHP wrapper class per tool.
 
 **Xpdf version:** 4.06
 
 *Maintained by [Restruct](https://github.com/restruct). If this package saves you time, you can
 [support ongoing maintenance](https://github.com/sponsors/restruct).*
 
-## Requirements
+## Reading a PDF from PHP usually means a system package and a shell string
 
-- PHP 8.1 or higher and `symfony/process` ^6 or ^7 (`composer.json` is the source of truth).
-- Bundled binaries are x86_64 only: Linux x86_64, and macOS x86_64 or Apple Silicon via Rosetta 2.
-  On other platforms (e.g. Linux ARM64) install xpdf yourself and point `XPDF_BIN_DIR` at it.
+PHP cannot read PDF content on its own. The usual route is to install xpdf or poppler on every
+server and development machine, build a `shell_exec()` command line by hand, and parse the tool's
+text output yourself: which version is installed differs per machine, a missing binary only shows
+up at runtime, and a damaged PDF easily parses as "0 pages" instead of an error.
 
-## Installation
+This package bundles one known xpdf version with the code, finds the right binary for the platform
+itself, runs it through `symfony/process` with a timeout, and returns parsed results.
 
-```bash
-composer require restruct/xpdf-static
-```
+## A wrapper per tool, with the binaries included
 
-## Quick examples
+### Quick examples
 
 ```php
 use Restruct\Xpdf\PdfToText;
@@ -51,24 +53,7 @@ $images = PdfImages::extractAll('/path/to/file.pdf', '/tmp/img');
 $listing = PdfImages::list('/path/to/file.pdf');
 ```
 
-## Wrapper classes
-
-### `Restruct\Xpdf\Xpdf` — binary resolution + generic runner
-
-```php
-use Restruct\Xpdf\Xpdf;
-
-// Check availability
-Xpdf::isAvailable();
-Xpdf::availableTools(); // ['pdftotext', 'pdfinfo', ...]
-
-// Run any tool directly
-$result = Xpdf::run('pdftotext', ['-layout', '-enc', 'UTF-8', 'input.pdf', '-']);
-echo $result->output;
-echo $result->isSuccessful();
-```
-
-### `Restruct\Xpdf\PdfToText` — text extraction
+### `Restruct\Xpdf\PdfToText`: text extraction
 
 ```php
 use Restruct\Xpdf\PdfToText;
@@ -97,7 +82,11 @@ PdfToText::create('input.pdf')
     ->toFile('output.txt');
 ```
 
-### `Restruct\Xpdf\PdfInfo` — document metadata
+The layout modes (`layout()`, `simple()`, `simple2()`, `table()`, `linePrinter()`, `raw()`) exclude
+each other: setting one clears the others. `getText()` returns an empty string when pdftotext fails,
+`toFile()` returns `false`.
+
+### `Restruct\Xpdf\PdfInfo`: document metadata and paper size
 
 Replaces `howtomakeaturn/pdfinfo` with improved page dimension detection.
 
@@ -122,8 +111,14 @@ $dims->orientation; // 'portrait'
 $dims->rotation;    // 0
 $dims->nearestDIN;  // 'A4' or 'A3'
 
+// Rotation of the page, in degrees
+$info->getPageRotation();
+
 // All fields as array
 $all = $info->getAll();
+
+// Or in one call
+$all = PdfInfo::info('input.pdf');
 ```
 
 If pdfinfo fails (damaged, unreadable or user-password-protected file, timeout), every parsed
@@ -135,11 +130,13 @@ opens fine and does not throw.)
 Empty fields (e.g. a document without a title) return `null`. When pdfinfo prints a label twice,
 the first value wins.
 
-`standard` is pdfinfo's own label when it prints one (it labels A0 to A6 and letter), otherwise the
-nearest entry in the built-in table of ISO A/B/C, ANSI and a few other sizes, within 2 points in
-either orientation. `null` means no standard size matched.
+`standard` is the A-size label pdfinfo prints itself when it prints one (A0 to A6), otherwise the
+nearest entry in the built-in table of ISO A/B/C, ANSI and a few other sizes (Letter among them),
+within 2 points in either orientation. `null` means no standard size matched. `width` and `height`
+are rounded to whole points; `nearestDIN` is `A4` for pages up to roughly A4 or Letter size and
+`A3` for anything larger.
 
-### `Restruct\Xpdf\PdfToPng` — page rendering
+### `Restruct\Xpdf\PdfToPng`: page rendering
 
 ```php
 use Restruct\Xpdf\PdfToPng;
@@ -159,7 +156,10 @@ $files = PdfToPng::create('input.pdf')
     ->convert('/tmp/output');
 ```
 
-### `Restruct\Xpdf\PdfImages` — image extraction
+The default resolution of `render()` and `renderPage()` is 150 dpi. On failure, `convert()` and
+`render()` return an empty array and `renderPage()` returns `null`.
+
+### `Restruct\Xpdf\PdfImages`: image extraction
 
 ```php
 use Restruct\Xpdf\PdfImages;
@@ -184,20 +184,79 @@ $files = PdfImages::create('input.pdf')
     ->extract('/tmp/img');
 ```
 
-## Binary resolution
+### `Restruct\Xpdf\Xpdf`: binary resolution and a generic runner
 
-The bootstrap auto-detects the platform and sets `XPDF_BIN_DIR`:
+For the tools without a wrapper class (`pdffonts`, `pdftohtml`, `pdftoppm`, `pdftops`,
+`pdfdetach`), or any option a wrapper does not expose:
+
+```php
+use Restruct\Xpdf\Xpdf;
+
+// Check availability
+Xpdf::isAvailable();
+Xpdf::availableTools(); // ['pdftotext', 'pdfinfo', ...]
+
+// Run any tool directly
+$result = Xpdf::run('pdftotext', ['-layout', '-enc', 'UTF-8', 'input.pdf', '-']);
+echo $result->output;
+echo $result->isSuccessful();
+```
+
+`run()` throws a `RuntimeException` when the tool's binary is not available. Otherwise it returns
+an `XpdfResult` with `output`, `errorOutput` and `exitCode` (`-1` on a timeout), and never throws on
+a failed run.
+
+## Technical
+
+### Version compatibility
+
+| Branch | Package version | Xpdf | PHP |
+|--------|-----------------|------|-----|
+| `main` | `1.x` | 4.06 | 8.1+ |
+
+`composer.json` is the source of truth for exact constraints. This is a plain PHP package; it does
+not depend on any framework.
+
+### Requirements
+
+- PHP 8.1 or higher and `symfony/process` ^6 or ^7.
+- Bundled binaries are x86_64 only: Linux x86_64, and macOS x86_64 or Apple Silicon via Rosetta 2.
+  On other platforms (e.g. Linux ARM64) install xpdf yourself and point `XPDF_BIN_DIR` at it.
+- The Linux binaries are dynamically linked: they need `libfontconfig.so.1` (all tools) and, for
+  the rendering tools such as `pdftopng`, `libz` and `libbz2`. Most distributions and CI images
+  have these; a minimal container image may not.
+
+### Installation
+
+```bash
+composer require restruct/xpdf-static
+```
+
+### Binary resolution
+
+On first use, the package includes its `bootstrap.php`, which detects the platform and defines the
+`XPDF_BIN_DIR` constant, taking the first of:
 
 1. `XPDF_BIN_DIR` constant (if already defined)
-2. `XPDF_BIN_DIR` environment variable
+2. `XPDF_BIN_DIR` environment variable (when it is an existing directory)
 3. macOS: bundled `x64/mac/` binaries
 4. Linux: bundled `x64/linux/` binaries
 
-## Available binaries
+On any other platform nothing is defined, `Xpdf::isAvailable()` returns `false` and `run()` throws.
 
-All 9 xpdf tools are bundled: `pdftotext`, `pdfinfo`, `pdffonts`, `pdfimages`, `pdftohtml`, `pdftopng`, `pdftoppm`, `pdftops`, `pdfdetach`.
+### Timeouts
 
-## Running the tests
+Every tool runs with a timeout of 30 seconds by default (`Xpdf::setDefaultTimeout()` changes it).
+`PdfToPng` defaults to 120 seconds and `PdfImages` extraction to 60. The `run()`, `getText()`,
+`toFile()`, `convert()`, `extract()` and `listImages()` methods take a `$timeout` argument in seconds.
+
+### Available binaries
+
+All 9 xpdf tools are bundled: `pdftotext`, `pdfinfo`, `pdffonts`, `pdfimages`, `pdftohtml`,
+`pdftopng`, `pdftoppm`, `pdftops`, `pdfdetach`. Their options are in the man pages in `xpdf-doc/`
+and at https://www.xpdfreader.com/.
+
+### Running the tests
 
 ```bash
 composer install
@@ -206,7 +265,11 @@ vendor/bin/phpunit
 
 Tests that run the real `pdfinfo` are skipped when it is not available.
 
-## License
+### Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
+
+### License
 
 - Wrapper code (`bootstrap.php`, `src/`): MIT (Copyright Restruct web & apps).
 - Bundled xpdf binaries (`x64/`): unmodified xpdf-tools 4.06, Copyright Glyph & Cog, LLC, licensed
