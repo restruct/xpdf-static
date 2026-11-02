@@ -1,6 +1,7 @@
 {
   "name": "restruct/xpdf-static",
-  "description": "Pre-compiled xpdf tools with PHP wrappers (pdftotext, pdfinfo, pdftopng, pdfimages) for Linux x64 and macOS",
+  "description": "Pre-compiled Xpdf command-line tools (pdftotext, pdfinfo, pdftopng, pdfimages and more) for Linux and macOS, with fluent PHP wrappers",
+  "keywords": ["php", "pdf", "xpdf", "pdftotext", "pdfinfo", "pdftopng", "pdfimages", "pdf-to-text", "static-binaries"],
   "license": "(MIT AND (GPL-2.0-only OR GPL-3.0-only))",
   "authors": [
     {
